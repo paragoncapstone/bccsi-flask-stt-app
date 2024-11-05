@@ -28,7 +28,7 @@ migrate.init_app(app, db)
 
 CORS(app, origins=["http://localhost:3000", "https://capstone-lms.vercel.app"])
 
-@app.route('/hello', methods=['GET'])
+@app.route('/', methods=['GET'])
 def hello_world():
     return jsonify({"message": "Hello World!"}), 200
 
