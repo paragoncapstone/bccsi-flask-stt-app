@@ -1,5 +1,6 @@
 Flask
 Flask-SQLAlchemy
+SQLAlchemy==1.4.45
 python-dotenv
 psycopg2-binary
 Flask
