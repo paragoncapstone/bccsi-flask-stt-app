@@ -231,7 +231,6 @@ def get_grade(final_score):
         return 'Did Not Meet Expectations'
 
 @app.route('/api/voice-exercises-history', methods=['POST'])
-@cross_origin(origins=["http://localhost:3000", "https://capstone-lms.vercel.app", "https://capstone-b5lfpvbba-paragons-projects-6f921143.vercel.app"])
 def create_voice_exercise_history():
     try:
         if 'audio_blob' in request.files and 'expected_text' in request.form:
@@ -270,7 +269,7 @@ def create_voice_exercise_history():
 
 
 @app.route('/api/submit-exercise', methods=['POST'])
-@cross_origin(origins=["http://localhost:3000", "https://capstone-lms.vercel.app", "https://capstone-b5lfpvbba-paragons-projects-6f921143.vercel.app"])
+@cross_origin(origins=["http://localhost:3000", "https://capstone-lms.vercel.app"])
 def submit_exercise():
     try:
         data = request.get_json()
