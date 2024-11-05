@@ -6,17 +6,14 @@ from dotenv import load_dotenv
 from flask_cors import CORS, cross_origin
 import speech_recognition as sr
 from pydub import AudioSegment
-from transformers import BertTokenizer, BertModel, RobertaTokenizer, RobertaModel
-import torch
-import torch.nn as nn
-import torch.optim as optim
+
+
+
+
 from jiwer import wer
-from sentence_transformers import SentenceTransformer
+
 import logging
-import numpy as np
-import nltk
-from nltk.corpus import cmudict
-from pydub.exceptions import CouldntDecodeError
+
 from difflib import SequenceMatcher
 import json
 import base64
@@ -29,7 +26,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 migrate.init_app(app, db) 
 
-CORS(app, origins=["http://localhost:3000"])  
+CORS(app, origins=["http://localhost:3000", "https://capstone-lms.vercel.app"])
 
 def assign_award(average_score):
     """Helper function to assign award based on average score"""
@@ -157,110 +154,7 @@ def calculate_student_voice_awards(student_id):
 
     return jsonify({"message": "Voice awards calculated and saved."}), 200
         
-sentence_transformer_model = SentenceTransformer('all-MiniLM-L6-v2')
 
-
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-bert_model = BertModel.from_pretrained('bert-base-uncased')
-
-roberta_tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
-roberta_model = RobertaModel.from_pretrained('roberta-base')
-
-
-nltk.download('cmudict')
-phoneme_dict = cmudict.dict()
-
-
-class FluencyModel(nn.Module):
-    def __init__(self):
-        super(FluencyModel, self).__init__()
-        self.fc = nn.Linear(768 * 2, 1) 
-        self.sigmoid = nn.Sigmoid()  #
-    
-    def forward(self, x):
-        return self.sigmoid(self.fc(x))
-
-# Initialize the fluency model, criterion, and optimizer
-fluency_model = FluencyModel()
-fluency_criterion = nn.MSELoss()
-fluency_optimizer = optim.Adam(fluency_model.parameters(), lr=0.001)
-
-def get_bert_embeddings(text):
-    inputs = tokenizer(text, return_tensors='pt', padding=True, truncation=True, max_length=512)
-    with torch.no_grad():
-        outputs = bert_model(**inputs)
-    return outputs.last_hidden_state.mean(dim=1).squeeze()
-
-def get_roberta_embeddings(text):
-    if not text:
-        raise ValueError("Input text cannot be empty")
-    
-    inputs = roberta_tokenizer(text, return_tensors='pt', padding=True, truncation=True, max_length=512)
-    with torch.no_grad():
-        outputs = roberta_model(**inputs)
-    return outputs.last_hidden_state.mean(dim=1).squeeze()
-
-def calculate_advanced_similarity(text1, text2):
-    if not text1 or not text2:
-        raise ValueError("Both input texts must be non-empty")
-    
-    embedding1 = get_roberta_embeddings(text1)
-    embedding2 = get_roberta_embeddings(text2)
-    
-    cosine_sim = torch.nn.functional.cosine_similarity(embedding1, embedding2, dim=0)
-    
-    return cosine_sim.item() * 100  
-
-def calculate_accuracy(expected_text, recognized_text):
-    if not expected_text or not recognized_text:
-        return 0.0
-
-    wer_score = wer(expected_text, recognized_text) * 100
-    semantic_similarity = calculate_advanced_similarity(expected_text, recognized_text)
-
-    combined_accuracy = (100 - wer_score + semantic_similarity) / 2
-    return round(combined_accuracy, 2)
-
-def calculate_semantic_similarity(text1, text2):
-    if not text1 or not text2:
-     return 0.0
-    inputs1 = tokenizer(text1, return_tensors='pt', padding=True, truncation=True)
-    inputs2 = tokenizer(text2, return_tensors='pt', padding=True, truncation=True)
-    with torch.no_grad():
-        outputs1 = bert_model(**inputs1)
-        outputs2 = bert_model(**inputs2)
-    embedding1 = outputs1.last_hidden_state.mean(dim=1).squeeze()
-    embedding2 = outputs2.last_hidden_state.mean(dim=1).squeeze()
-    cosine_sim = torch.nn.functional.cosine_similarity(embedding1, embedding2, dim=0)
-    return cosine_sim.item() * 100  
-
-def calculate_fluency_score(expected_text, recognized_text):
-    if not recognized_text or not expected_text:
-        return 0.0
-
-    semantic_similarity = calculate_semantic_similarity(expected_text, recognized_text)
-
-    matcher = SequenceMatcher(None, expected_text.lower(), recognized_text.lower())
-    word_match_ratio = matcher.ratio() * 100
-
-    similarity_threshold = 10
-    if semantic_similarity < similarity_threshold and word_match_ratio < similarity_threshold:
-        return 0.0
-
-    fluency_score = (semantic_similarity + word_match_ratio) / 2
-    return round(fluency_score, 2)
-
-def calculate_speed_score(audio_file, recognized_text):
-    audio = AudioSegment.from_file(audio_file)
-    duration_seconds = len(audio) / 1000  
-    num_words = len(recognized_text.split())
-
-    if duration_seconds > 0:
-        wps = num_words / duration_seconds
-    else:
-        wps = 0
-
-  
     if wps < 0.01:
         return 0
     elif 0.01 <= wps < 0.02:
@@ -306,15 +200,7 @@ def calculate_speed_score(audio_file, recognized_text):
     else:
         return 100
 
-def get_phonemes(text):
-    words = text.lower().split()
-    phoneme_list = []
-    for word in words:
-        if word in phoneme_dict:
-            phoneme_list.append(phoneme_dict[word][0])
-        else:
-            phoneme_list.append("No phonemes available")  
-    return phoneme_list
+
 
 def recognize_speech(audio_file):
     recognizer = sr.Recognizer()
@@ -359,34 +245,12 @@ def create_voice_exercise_history():
             except sr.RequestError:
                 return jsonify({'error': 'Could not process audio; please try again'})
 
-            accuracy_score = calculate_accuracy(expected_text, recognized_text)
-            pronunciation_score = calculate_semantic_similarity(expected_text, recognized_text)
-            fluency_score = calculate_fluency_score(expected_text, recognized_text)
-            speed_score = calculate_speed_score(wav_path, recognized_text)
+          
 
-            final_score = (accuracy_score + fluency_score + pronunciation_score + speed_score) / 4
-            final_score = round(final_score, 2)
-            grade = get_grade(final_score)
-
-            phonemes = get_phonemes(recognized_text)
-
-        
-            with open(wav_path, "rb") as audio_file:
-                audio_base64 = base64.b64encode(audio_file.read()).decode('utf-8')
 
            
-            return jsonify({
-                'accuracy_score': accuracy_score,
-                'pronunciation_score': pronunciation_score,
-                'fluency_score': fluency_score,
-                'speed_score': speed_score,
-                'final_score': final_score,
-                'grade': grade,
-                'recognized_text': recognized_text,
-                'phonemes': phonemes,
-                'voiceRecord': audio_base64,
-                 
-            }), 200  
+         
+         
         else:
             return jsonify({'error': 'No audio file or expected text received'}), 400
     except Exception as e:
@@ -395,7 +259,7 @@ def create_voice_exercise_history():
 
 
 @app.route('/api/submit-exercise', methods=['POST'])
-@cross_origin(origins=["http://localhost:3000"])
+@cross_origin(origins=["http://localhost:3000", "https://capstone-lms.vercel.app"])
 def submit_exercise():
     try:
         data = request.get_json()
