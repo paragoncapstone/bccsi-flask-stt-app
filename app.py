@@ -77,7 +77,7 @@ def calculate_student_voice_awards(student_id):
 
     return jsonify({"message": "Voice awards calculated and saved."}), 200 
 
-@app.route('/api/voice-exercises', methods=['POST'])
+@app.route('/api/voice-exercises', methods=['GET'])
 @cross_origin(origins=["http://localhost:3000", "https://capstone-lms.vercel.app", "https://capstone-b5lfpvbba-paragons-projects-6f921143.vercel.app"])
 def voice_exercises():
     try:
