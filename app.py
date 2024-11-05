@@ -26,7 +26,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
 migrate.init_app(app, db) 
 
-CORS(app, origins=["http://localhost:3000", "https://capstone-lms.vercel.app"])
+CORS(app, origins=[
+    "http://localhost:3000", 
+    "https://capstone-lms.vercel.app", 
+    "https://capstone-b5lfpvbba-paragons-projects-6f921143.vercel.app"
+])
 
 @app.route('/', methods=['GET'])
 def hello_world():
@@ -73,8 +77,9 @@ def calculate_student_voice_awards(student_id):
 
     return jsonify({"message": "Voice awards calculated and saved."}), 200 
 
-@app.route('/api/voice-exercises', methods=['GET'])
-def get_voice_exercises():
+@app.route('/api/voice-exercises', methods=['POST'])
+@cross_origin(origins=["http://localhost:3000", "https://capstone-lms.vercel.app", "https://capstone-b5lfpvbba-paragons-projects-6f921143.vercel.app"])
+def voice_exercises():
     try:
         student_id = request.args.get('studentId')
         module_title = request.args.get('moduleTitle')
