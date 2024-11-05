@@ -28,6 +28,10 @@ migrate.init_app(app, db)
 
 CORS(app, origins=["http://localhost:3000", "https://capstone-lms.vercel.app"])
 
+@app.route('/hello', methods=['GET'])
+def hello_world():
+    return jsonify({"message": "Hello World!"}), 200
+
 def assign_award(average_score):
     """Helper function to assign award based on average score"""
     if average_score >= 95:
