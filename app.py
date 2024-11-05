@@ -29,7 +29,8 @@ migrate.init_app(app, db)
 CORS(app, origins=[
     "http://localhost:3000", 
     "https://capstone-lms.vercel.app", 
-    "https://capstone-b5lfpvbba-paragons-projects-6f921143.vercel.app"
+    "https://capstone-b5lfpvbba-paragons-projects-6f921143.vercel.app",
+    "https://capstone-2cte19f7l-paragons-projects-6f921143.vercel.app"  
 ])
 
 @app.route('/', methods=['GET'])
